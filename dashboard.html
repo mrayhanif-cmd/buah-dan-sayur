@@ -1,0 +1,282 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<style>
+.dashboard-container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+.filter-bar {
+    background: white;
+    padding: 18px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.filter-bar select,
+.filter-bar input {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.btn-green {
+    background: #2f9e44;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #eaffea, #d4ffd8);
+    padding: 25px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.stat-number {
+    font-size: 40px;
+    font-weight: bold;
+    color: #2f9e44;
+}
+
+.stat-label {
+    color: #555;
+    margin-top: 5px;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.table-section {
+    margin-top: 30px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #2f9e44;
+    color: white;
+    padding: 12px;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+    background: #f2fff2;
+}
+</style>
+
+<div class="dashboard-container">
+
+    <h2 style="margin-bottom:20px;">Dashboard Analisis Dataset</h2>
+
+    <!-- FILTER -->
+    <div class="filter-bar">
+        <div>
+            <label>Filter Jenis</label><br>
+            <select id="filterJenis">
+                <option value="semua">Semua</option>
+                <option value="buah">Buah</option>
+                <option value="sayur">Sayur</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Cari Nama</label><br>
+            <input type="text" id="searchInput" placeholder="Cari buah/sayur...">
+        </div>
+
+        <button class="btn-green" onclick="applyFilter()">Terapkan</button>
+    </div>
+
+    <!-- STATISTIK -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number" id="totalData">0</div>
+            <div class="stat-label">Total Dataset</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="totalBuah">0</div>
+            <div class="stat-label">Total Buah</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="totalSayur">0</div>
+            <div class="stat-label">Total Sayur</div>
+        </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="charts-grid">
+        <div class="card">
+            <h4>Distribusi Jenis</h4>
+            <canvas id="jenisChart"></canvas>
+        </div>
+        <div class="card">
+            <h4>Distribusi Nilai pH</h4>
+            <canvas id="phChart"></canvas>
+        </div>
+    </div>
+
+    <!-- TABEL -->
+    <div class="card table-section">
+        <h4>Data Dataset</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Jenis</th>
+                    <th>Nama</th>
+                    <th>pH</th>
+                    <th>Rekomendasi</th>
+                </tr>
+            </thead>
+            <tbody id="dataTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+let fullData = [];
+let jenisChart, phChart;
+
+async function loadData() {
+    const res = await fetch("/api/data");
+    fullData = await res.json();
+
+    fullData = fullData.map(d => ({
+        jenis: d.jenis.toLowerCase(),
+        nama: d.nama.toLowerCase(),
+        ph: Number(d.ph),
+        rekomendasi: d.rekomendasi
+    }));
+
+    applyFilter();
+}
+
+function applyFilter() {
+    const jenisFilter = document.getElementById("filterJenis").value;
+    const search = document.getElementById("searchInput").value.toLowerCase();
+
+    let filtered = fullData;
+
+    if (jenisFilter !== "semua") {
+        filtered = filtered.filter(d => d.jenis === jenisFilter);
+    }
+
+    if (search !== "") {
+        filtered = filtered.filter(d => d.nama.includes(search));
+    }
+
+    renderStats(filtered);
+    renderTable(filtered);
+    renderCharts(filtered);
+}
+
+function renderStats(data) {
+    document.getElementById("totalData").textContent = data.length;
+    document.getElementById("totalBuah").textContent =
+        data.filter(d => d.jenis === "buah").length;
+    document.getElementById("totalSayur").textContent =
+        data.filter(d => d.jenis === "sayur").length;
+}
+
+function renderTable(data) {
+    const table = document.getElementById("dataTable");
+    table.innerHTML = "";
+
+    data.forEach(d => {
+        table.innerHTML += `
+            <tr>
+                <td>${d.jenis}</td>
+                <td>${d.nama}</td>
+                <td>${d.ph}</td>
+                <td>${d.rekomendasi}</td>
+            </tr>
+        `;
+    });
+}
+
+function renderCharts(data) {
+
+    const jenisCount = {};
+    const phGroup = { Asam: 0, Netral: 0, Basa: 0 };
+
+    data.forEach(d => {
+        jenisCount[d.jenis] = (jenisCount[d.jenis] || 0) + 1;
+
+        if (d.ph < 7) phGroup.Asam++;
+        else if (d.ph === 7) phGroup.Netral++;
+        else phGroup.Basa++;
+    });
+
+    if (jenisChart) jenisChart.destroy();
+    if (phChart) phChart.destroy();
+
+    jenisChart = new Chart(document.getElementById("jenisChart"), {
+        type: "doughnut",
+        data: {
+            labels: Object.keys(jenisCount),
+            datasets: [{
+                label: "Distribusi Jenis",
+                data: Object.values(jenisCount),
+                backgroundColor: ["#2f9e44", "#74c69d"]
+            }]
+        }
+    });
+
+    phChart = new Chart(document.getElementById("phChart"), {
+        type: "bar",
+        data: {
+            labels: Object.keys(phGroup),
+            datasets: [{
+                label: "Jumlah Data",
+                data: Object.values(phGroup),
+                backgroundColor: ["#74c69d", "#2f9e44", "#95d5b2"]
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+loadData();
+</script>
+
+{% endblock %}

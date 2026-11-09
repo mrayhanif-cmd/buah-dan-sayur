@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="card">
+    <h3>Prediksi Bahan Kimia Pembersih</h3>
+
+    <div class="form-group">
+        <label>Unggah Gambar Buah/Sayur</label>
+        <input type="file" id="gambarInput" accept="image/*">
+    </div>
+
+    <div class="form-group">
+        <label>Jenis</label>
+        <select id="jenisSelect">
+            <option value="buah">Buah</option>
+            <option value="sayur">Sayur</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Nama Buah / Sayur</label>
+        <input type="text" id="namaInput" placeholder="Contoh: Apel">
+    </div>
+
+    <div id="result" style="margin-top:20px;"></div>
+</div>
+
+<script>
+const gambarInput = document.getElementById('gambarInput');
+const jenisSelect = document.getElementById('jenisSelect');
+const namaInput = document.getElementById('namaInput');
+const resultDiv = document.getElementById('result');
+
+gambarInput.addEventListener('change', () => {
+    const file = gambarInput.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('gambar', file);
+    formData.append('jenis', jenisSelect.value);
+    formData.append('nama', namaInput.value);
+
+    fetch('/predict_ajax', {
+        method: 'POST',
+        body: formData
+    })
+    .then(resp => resp.json())
+    .then(data => {
+        resultDiv.innerHTML = `
+            <img src="${data.gambar_url}" style="max-width:250px; margin-bottom:10px;"><br>
+            <p><b>Jenis:</b> ${data.jenis}</p>
+            <p><b>Nama:</b> ${data.nama}</p>
+            <p><b>Kondisi:</b> ${data.kondisi}</p>
+            <p><b>Perkiraan pH:</b> ${data.ph}</p>
+            <p><b>Rekomendasi Bahan Kimia:</b></p>
+            <h2 style="color:#2f9e44;">${data.hasil}</h2>
+        `;
+    })
+    .catch(err => console.error(err));
+});
+</script>
+
+{% endblock %}

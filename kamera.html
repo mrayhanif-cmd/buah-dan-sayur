@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="card form-card" style="max-width:500px;margin:auto;">
+    <h2 style="text-align:center;margin-bottom:15px;">Prediksi Bahan Pembersih Buah & Sayur</h2>
+
+    <!-- Video kamera -->
+    <video id="video" width="100%" autoplay style="border-radius:10px;margin-bottom:10px;"></video>
+
+    <!-- Input jenis & nama -->
+    <label>Jenis</label>
+    <select id="jenis" style="width:100%;padding:8px;margin-bottom:10px;">
+        <option value="buah">Buah</option>
+        <option value="sayur">Sayur</option>
+    </select>
+
+    <label>Nama Buah/Sayur</label>
+    <input type="text" id="nama" placeholder="Contoh: Apel" style="width:100%;padding:8px;margin-bottom:10px;">
+
+    <!-- Tombol capture & prediksi -->
+    <button onclick="captureAndPredict()" 
+            style="width:100%;padding:10px;background:#1971c2;color:white;border:none;border-radius:8px;margin-bottom:10px;">
+        Ambil Gambar & Prediksi
+    </button>
+
+    <!-- Hasil prediksi -->
+    <div id="result" style="margin-top:15px;"></div>
+</div>
+
+<script>
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+    document.getElementById('video').srcObject = stream;
+})
+.catch(err => {
+    alert("Tidak dapat mengakses kamera: " + err);
+});
+
+function captureAndPredict() {
+    const video = document.getElementById('video');
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 300;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const image_data = canvas.toDataURL('image/jpeg', 0.7);
+    const jenis = document.getElementById('jenis').value;
+    const nama = document.getElementById('nama').value;
+
+    fetch('/predict_image_ajax', {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body: `image=${encodeURIComponent(image_data)}&jenis=${jenis}&nama=${encodeURIComponent(nama)}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = `
+            <div style="text-align:center;margin-top:10px;">
+                <img src="${data.gambar_url}" width="260" style="border-radius:10px;"><br>
+                <p><b>Jenis:</b> ${data.jenis}</p>
+                <p><b>Nama:</b> ${data.nama}</p>
+                <p><b>pH:</b> ${data.ph}</p>
+                <p><b>Kondisi:</b> ${data.kondisi}</p>
+                <h3 style="color:#2f9e44;">${data.hasil}</h3>
+            </div>
+        `;
+    })
+    .catch(err => {
+        alert("Error prediksi: " + err);
+    });
+}
+</script>
+
+{% endblock %}

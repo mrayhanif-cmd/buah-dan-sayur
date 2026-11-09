@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ title if title else "KNN Pembersih Buah & Sayur" }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">🍏 Pembersih KNN</div>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/">Prediksi</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <header class="header">
+            <h1>{{ title if title else "Pembersih Buah & Sayur" }}</h1>
+        </header>
+
+        <section class="content">
+            {% block content %}{% endblock %}
+        </section>
+    </main>
+</div>
+
+</body>
+</html>

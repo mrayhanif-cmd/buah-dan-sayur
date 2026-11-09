@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="card form-card">
+    <h2>Rekomendasi Bahan Pembersih Buah & Sayur</h2>
+
+    <!-- ========================= -->
+    <!-- HASIL GAMBAR DARI KAMERA -->
+    <!-- ========================= -->
+    {% if image is defined and image %}
+    <div style="margin-bottom:20px;text-align:center;">
+        <img src="/{{ image }}" width="260" style="border-radius:10px;">
+
+        {% if kualitas is defined and kualitas %}
+        <p style="margin-top:8px;">
+            <strong>Kualitas Visual:</strong>
+            <span style="color:{% if kualitas == 'Baik' %}green{% else %}red{% endif %};">
+                {{ kualitas }}
+            </span>
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ========================= -->
+    <!-- FORM INPUT MANUAL -->
+    <!-- ========================= -->
+    <form action="/predict" method="POST" style="margin-bottom:25px;">
+
+        <label>Jenis</label>
+        <select name="jenis" required style="width:100%;padding:8px;margin-bottom:10px;">
+            <option value="">-- Pilih Jenis --</option>
+            <option value="buah"
+                {% if jenis is defined and jenis == 'buah' %}selected{% endif %}>
+                Buah
+            </option>
+            <option value="sayur"
+                {% if jenis is defined and jenis == 'sayur' %}selected{% endif %}>
+                Sayur
+            </option>
+        </select>
+
+        <label>Nama Buah / Sayur</label>
+        <input type="text" 
+               name="nama" 
+               placeholder="Contoh: Apel"
+               value="{{ nama if nama is defined else '' }}"
+               required
+               style="width:100%;padding:8px;margin-bottom:10px;">
+
+        <label>Nilai pH</label>
+        <input type="number" 
+               step="0.01"
+               name="ph"
+               placeholder="Contoh: 5.5"
+               value="{{ ph if ph is defined else '' }}"
+               required
+               style="width:100%;padding:8px;margin-bottom:15px;">
+
+        <button type="submit"
+                style="width:100%;padding:10px;background:#2f9e44;color:white;border:none;border-radius:8px;">
+            Prediksi Manual
+        </button>
+    </form>
+
+    <!-- ========================= -->
+    <!-- HASIL PREDIKSI -->
+    <!-- ========================= -->
+    {% if hasil is defined and hasil %}
+    <div style="margin-top:20px;padding:15px;background:#f4fdf6;border-radius:10px;">
+        <h3>Hasil Prediksi</h3>
+
+        {% if jenis is defined %}
+        <p><b>Jenis:</b> {{ jenis }}</p>
+        {% endif %}
+
+        {% if nama is defined %}
+        <p><b>Nama:</b> {{ nama }}</p>
+        {% endif %}
+
+        {% if ph is defined %}
+        <p><b>Nilai pH:</b> {{ ph }}</p>
+        {% endif %}
+
+        {% if kualitas is defined %}
+        <p><b>Kualitas Kamera:</b> {{ kualitas }}</p>
+        {% endif %}
+
+        <h2 style="color:#2f9e44;margin-top:10px;">
+            {{ hasil }}
+        </h2>
+    </div>
+    {% endif %}
+
+    <!-- ========================= -->
+    <!-- TOMBOL KAMERA -->
+    <!-- ========================= -->
+    <div style="margin-top:25px;text-align:center;">
+        <a href="/kamera"
+           style="padding:10px 20px;background:#1971c2;color:white;border-radius:8px;text-decoration:none;">
+            Gunakan Kamera
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}
